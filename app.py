@@ -17,53 +17,32 @@ engine = create_engine(DB_URL, convert_unicode=True, echo=False)
 
 
 
-def person_exists(id_):
-
-    person = Persons(engine)
-    person.query(f"select id, name from Persons where id='{id_}'")
-    print(person.result)
-    if id_ not in person:
-        abort(404)
 
     
 @app.route("/balance/<id_>", methods=["GET"])
 def balance(id_):
-    person_exists = Persons
-    person_balance = Transaction(engine)
-    person_balance.query(f"""
-                        with transactions as (
-                            select id as transaction_id, person_id, amount as amount from Incomes where person_id = '{id_}'
-                            UNION ALL
-                            select id as transaction_id, person_id, -amount as amount from Expenses where person_id = '{id_}'
-                        )
-                        select person_id, sum(amount) as balance from transactions group by person_id;
-    """)
-
-    return json.dumps(person_balance.to_json())
+    db_ = db(engine)
+    if  db_.person_exists(id_) == False:
+        abort(404)
+    db_.get_balance(id_)
+    
+    return db_.to_json()
 
 
 @app.route('/amount', methods=['GET','POST'])
 def insertion():
     req = RequestHandler(request)
-    person_exists(req.payload.account_id)
-
+    db_ = db(engine)
+    db_.person_exists(req.payload.account_id)
     if type(req.payload.amount) == type(1) or type(req.payload.amount) == type(1.1):
-        print(type(req.payload.amount), type(1))
+        pass
     else:
         raise ValueError
-    Table = 'Incomes' if req.payload.amount >= 0 else 'Expense'
-    trans = Transaction(engine) 
-    try:
-
-        trans.insert(f"""
-                insert into {Table} (id, person_id, amount) values(
-                    '{req.header['Transaction-Id']}', '{req.payload.account_id}', '{req.payload.amount}'
-                ); 
-        """)
+    db_.submit_amount(req)
         
 
-        return ''
-    except Exception as e: print(e); abort(403)
+    return ''
+    # except Exception as e: print(e); abort(403)
     
 
 

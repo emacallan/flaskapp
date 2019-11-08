@@ -8,6 +8,23 @@ class foo:
 
     def __init__(self, obj): self.__dict__ = obj
         
+class TransactionObj:
+
+    def __init__(self, query_result = None, transaction_id = None, account_id = None, amount = None):
+        if query_result == None:
+            self.person_id = account_id
+            self.balance = amount
+        else:
+            print(query_result)
+            # assert len(query_result) == 1 or query_result == None
+            # self.transaction_id = str(query_result[0][0])
+            self.person_id = str(query_result[0])
+            self.balance = query_result[1]
+
+    def __repr__(self):
+
+        return "{"+f""" "person_id":"{self.person_id}", "balance": {self.balance} """+"}"
+
 class RequestHandler:
 
     def __init__(self,request):
@@ -26,7 +43,45 @@ class db:
     def __init__(self, engine):
         self.engine = engine
         self.connection = engine.connect()
+
+    def __contains__(self, obj):    
+        return obj in self.result
+
+    def get_balance(self, id_):
+        q = f"""
+                with transactions as (
+                    select id as transaction_id, person_id, amount as amount from Incomes where person_id = '{id_}'
+                    UNION ALL
+                    select id as transaction_id, person_id, -amount as amount from Expenses where person_id = '{id_}'
+                )
+                select person_id, sum(amount) as balance from transactions group by person_id;
+            """
+        self.result = TransactionObj(self.connection.execute(q).fetchone())
+        print('\t', str(self.result))
         
+
+    def submit_amount(self, req): 
+        Table = 'Incomes' if req.payload.amount >= 0 else 'Expenses'
+        q = f"""
+                insert into {Table} (id, person_id, amount) values(
+                    '{req.header['Transaction-Id']}', '{req.payload.account_id}', '{req.payload.amount}'
+                ); 
+            """
+        self.connection.execute(q)
+
+    def person_exists(self, id_):
+        q = f"select id, name from Persons where id='{id_}'"
+        self.result = self.connection.execute(q).fetchone()
+
+        return id_ in self.result[0]
+
+
+    def to_json(self):
+
+        return json.dumps(json.loads(str(self.result)), indent= 4)
+
+
+
 
 class PersonsObj: 
 
@@ -42,58 +97,23 @@ class Persons(db):
 
     def __init__(self, engine):
         super().__init__(engine)
+    
 
-    def query(self, q):
-        results = self.connection.execute(q).fetchall()
-        if len(results) == 1: 
-            self.result = str(PersonsObj(results[0]))
-        else:
-            self.result = [PersonsObj(result) for result in self.connection.execute(q).fetchall()]
+    def exists(self,id_):
+        results = self.connection.execute(f"select id, name from Persons where id='{id_}'").fetchall()
+        self.result = str(PersonsObj(results[0]))
+        
 
-    def to_json(self):
-
-        return json.dumps(json.loads(str(self.result)), indent= 4)
+    def to_json(self): return json.dumps(json.loads(str(self.result)), indent= 4)
 
 
     def __contains__(self,obj):
 
         return obj in self.result
 
-class TransactionObj:
 
-    def __init__(self, query_result = None, transaction_id = None, account_id = None, amount = None):
-        if query_result == None:
-            self.person_id = account_id
-            self.balance = amount
-        else:
-            print(query_result)
-            # assert len(query_result) == 1 or query_result == None
-            # self.transaction_id = str(query_result[0][0])
-            self.person_id = str(query_result[0][0])
-            self.balance = query_result[0][1]
     
     def __repr__(self):
 
         return "{"+f""" "person_id":"{self.person_id}", "balance": {self.balance} """+"}"
-
-class Transaction(db):
-
-    def __init__(self, engine):
-        super().__init__(engine)
-
-    def query(self,q):
-        self.result = TransactionObj(query_result = self.connection.execute(q).fetchall())
-    
-    def insert(self,q):
-        self.connection.execute(q)
-
-        # self.result = TransactionObj(**kwargs) 
-
-    def to_json(self):
-
-        return json.dumps(json.loads(str(self.result)), indent= 4)
-
-    def __str__(self):
-
-        return f"{self.result}"
 
