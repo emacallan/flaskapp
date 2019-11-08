@@ -13,3 +13,8 @@ _mailinglist
 .cache/
 .pytest_cache/
 .idea/
+requirements.txt
+server-setup.md
+foo-requests.py
+__pycache__
+.gitignore

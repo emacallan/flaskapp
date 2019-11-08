@@ -9,11 +9,11 @@ class foo:
     def __init__(self, obj):
 
         self.__dict__ = obj
-
+        print(dir(self))
+        
 class RequestHandler:
 
     def __init__(self,request):
-        print(request,'prutt')
         self.payload = foo(request.json) 
         self.header = request.headers
 
@@ -54,14 +54,21 @@ class Persons(db):
 
         return json.dumps(json.loads(str(self.result)), indent= 4)
 
-class BalanceObj:
 
-    def __init__(self, query_result = None, account_id = None, amount = None):
+    def __contains__(self,obj):
+
+        return obj in self.result
+
+class TransactionObj:
+
+    def __init__(self, query_result = None, transaction_id = None, account_id = None, amount = None):
         if query_result == None:
             self.person_id = account_id
             self.balance = amount
         else:
-            assert len(query_result) == 1 or query_result == None
+            print(query_result)
+            # assert len(query_result) == 1 or query_result == None
+            # self.transaction_id = str(query_result[0][0])
             self.person_id = str(query_result[0][0])
             self.balance = query_result[0][1]
     
@@ -69,17 +76,18 @@ class BalanceObj:
 
         return "{"+f""" "person_id":"{self.person_id}", "balance": {self.balance} """+"}"
 
-class Balance(db):
+class Transaction(db):
 
     def __init__(self, engine):
         super().__init__(engine)
 
     def query(self,q):
-        self.result = BalanceObj(query_result = self.connection.execute(q).fetchall())
+        self.result = TransactionObj(query_result = self.connection.execute(q).fetchall())
     
-    def insert(self,**kwargs):
+    def insert(self,q):
+        self.result = TransactionObj(query_result = self.connection.execute(q).fetchall())
 
-        self.result = BalanceObj(**kwargs) 
+        # self.result = TransactionObj(**kwargs) 
 
     def to_json(self):
 
@@ -88,3 +96,4 @@ class Balance(db):
     def __str__(self):
 
         return f"{self.result}"
+

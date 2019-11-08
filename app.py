@@ -1,10 +1,10 @@
 from collections import namedtuple
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template, abort 
 import json 
 from flask_sqlalchemy  import SQLAlchemy as sql
 from sqlalchemy import create_engine
 from config import POSTGRES_DB, POSTGRES_URL, POSTGRES_PW, POSTGRES_USER
-from DB import db, Persons, Balance, RequestHandler
+from DB import db, Persons, Transaction, RequestHandler
 
 DB_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_URL}/{POSTGRES_DB}"
 app = Flask(__name__)
@@ -17,56 +17,54 @@ engine = create_engine(DB_URL, convert_unicode=True, echo=False)
 
 
 
-@app.route('/')
-def hello_world():
-    return 'Hello, World!\nBye world!'
+def person_exists(id_):
 
+    person = Persons(engine)
+    person = Persons(engine)
+    person.query(f"select id, name from Persons where id='{id_}'")
 
-@app.route('/tryme', methods = ['GET'])
-def persons():
+    if id_ not in person:
+        abort(404)
 
-    people = Persons(engine)
-    people.query("select id, name from Persons where name = 'Stephen Ogden';")
-    print(people.to_json())
-    return json.dumps(people.to_json())
     
-@app.route("/balance/<id_>")
+@app.route("/balance/<id_>", methods=["GET"])
 def balance(id_):
-    person_balance = Balance(engine)
+    person_exists = Persons
+    person_balance = Transaction(engine)
     person_balance.query(f"""
                         with transactions as (
-                            select person_id, amount as amount from Incomes where person_id = '{id_}'
+                            select id as transaction_id, person_id, amount as amount from Incomes where person_id = '{id_}'
                             UNION ALL
-                            select person_id, -amount as amount from Expenses where person_id = '{id_}'
+                            select id as transaction_id, person_id, -amount as amount from Expenses where person_id = '{id_}'
                         )
                         select person_id, sum(amount) as balance from transactions group by person_id;
     """)
 
     return json.dumps(person_balance.to_json())
 
-@app.route("/amount/<id_>", methods=['GET', 'POST'])
-def insert_amount(id_):
-    payload = request.json
-    print(request.headers)
-    transaction = Balance(engine)
-    transaction.insert(**payload)
+
+@app.route('/amount', methods=['GET','POST'])
+def insertion():
+    print('functioning')
     req = RequestHandler(request)
-    q = f"""
-            insert into Expenses (transaction_id, person_id, amount) 
-                values ('{request.headers['Transaction-Id']}', '{transaction.result.person_id}', {transaction.result.balance})
-    """
-    req.query = q 
-    per = Persons(engine)
-    per.query(f"select id, name from Persons where id = '{req.payload.account_id}'")
-    print(req.payload.account_id in per.result, req.payload.account_id,per.result)
-    return per.to_json()
+    person_exists(req.payload.account_id)
+    if type(req.payload.amount) == type(1) or type(req.payload.amount) == type(1.1):
+        print(type(req.payload.amount), type(1))
+    else:
+        raise ValueError
+    Table = 'Incomes' if req.payload.amount >= 0 else 'Expense'
+    trans = Transaction(engine) 
+    try:
+        trans.insert(f"""
+                insert into {Table} (id, person_id, amount) values(
+                    '{req.header['Transaction-Id']}', '{req.payload.account_id}', '{req.payload.amount}'
+                ); 
+        """)
+        return trans.result
+    except: abort(403)
     
-    exit()
-    # person_transaction = Balance(engine)
-    # person_transaction.query(f"""
-                        
-    
-    # """)
+
+
 
 
 if __name__ == "__main__":
