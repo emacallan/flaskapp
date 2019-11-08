@@ -1,15 +1,12 @@
 from sqlalchemy import create_engine
 import json 
-from config import POSTGRES_DB, POSTGRES_URL, POSTGRES_PW, POSTGRES_USER
-DB_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_URL}/{POSTGRES_DB}"
+from config import PGURL
+DB_URL = PGURL
 engine = create_engine(DB_URL, convert_unicode=True, echo=False)
-
+print(engine)
 class foo:
 
-    def __init__(self, obj):
-
-        self.__dict__ = obj
-        print(dir(self))
+    def __init__(self, obj): self.__dict__ = obj
         
 class RequestHandler:
 
@@ -17,9 +14,12 @@ class RequestHandler:
         self.payload = foo(request.json) 
         self.header = request.headers
 
-    def __repr__(self):
+    # def __repr__(self):
 
-        return f"{self.request}"
+    #     return f"{self.request}"
+    def __repr__(self):
+        return f"""account_id:{self.payload.account_id}\namount:{self.payload.amount}"""
+
 
 class db:
 
@@ -85,7 +85,7 @@ class Transaction(db):
         self.result = TransactionObj(query_result = self.connection.execute(q).fetchall())
     
     def insert(self,q):
-        self.result = TransactionObj(query_result = self.connection.execute(q).fetchall())
+        self.connection.execute(q)
 
         # self.result = TransactionObj(**kwargs) 
 

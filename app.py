@@ -3,10 +3,10 @@ from flask import Flask, jsonify, request, render_template, abort
 import json 
 from flask_sqlalchemy  import SQLAlchemy as sql
 from sqlalchemy import create_engine
-from config import POSTGRES_DB, POSTGRES_URL, POSTGRES_PW, POSTGRES_USER
+from config import PGURL
 from DB import db, Persons, Transaction, RequestHandler
 
-DB_URL = f"postgresql+psycopg2://{POSTGRES_USER}:{POSTGRES_PW}@{POSTGRES_URL}/{POSTGRES_DB}"
+DB_URL = PGURL
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 engine = create_engine(DB_URL, convert_unicode=True, echo=False)
@@ -20,9 +20,8 @@ engine = create_engine(DB_URL, convert_unicode=True, echo=False)
 def person_exists(id_):
 
     person = Persons(engine)
-    person = Persons(engine)
     person.query(f"select id, name from Persons where id='{id_}'")
-
+    print(person.result)
     if id_ not in person:
         abort(404)
 
@@ -45,9 +44,9 @@ def balance(id_):
 
 @app.route('/amount', methods=['GET','POST'])
 def insertion():
-    print('functioning')
     req = RequestHandler(request)
     person_exists(req.payload.account_id)
+
     if type(req.payload.amount) == type(1) or type(req.payload.amount) == type(1.1):
         print(type(req.payload.amount), type(1))
     else:
@@ -55,13 +54,16 @@ def insertion():
     Table = 'Incomes' if req.payload.amount >= 0 else 'Expense'
     trans = Transaction(engine) 
     try:
+
         trans.insert(f"""
                 insert into {Table} (id, person_id, amount) values(
                     '{req.header['Transaction-Id']}', '{req.payload.account_id}', '{req.payload.amount}'
                 ); 
         """)
-        return trans.result
-    except: abort(403)
+        
+
+        return ''
+    except Exception as e: print(e); abort(403)
     
 
 
