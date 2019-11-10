@@ -90,7 +90,7 @@ class db:
                     f"Attempted insertion of duplicate primary key into database.\n{e}",
                 )
             else:
-                abort(404, "Submission could not be performed")
+    §            abort(404, "Submission could not be performed")
 
     def person_exists(self, person_id_):
         query = f"select id, name from Persons where id='{person_id_}'"
