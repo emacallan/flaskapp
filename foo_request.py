@@ -112,7 +112,7 @@ headers = {
 }
 response = requests.request('POST', url, headers = headers, data = payload, allow_redirects=False)
 print(response.text)
-
+print(payload,headers)  
 input()
 
 url = 'http://localhost:8080/amount'
@@ -123,7 +123,7 @@ headers = {
 }
 response = requests.request('POST', url, headers = headers, data = payload, allow_redirects=False)
 print(response.text)
-
+print(payload,headers)  
 input()
 
 url = 'http://localhost:8080/amount'
@@ -134,7 +134,7 @@ headers = {
 }
 response = requests.request('POST', url, headers = headers, data = payload, allow_redirects=False)
 print(response.text)
-
+print(payload,headers)  
 input()
 
 url = 'http://localhost:8080/balance/4a53a8f5-036c-4851-a86a-401abd01e1a7'
@@ -142,7 +142,7 @@ payload = {}
 headers = {}
 response = requests.request('GET', url, headers = headers, data = payload, allow_redirects=False)
 print(response.text)
-
+print(payload,headers)  
 input()
 
 url = 'http://localhost:8080/amount'
@@ -153,7 +153,7 @@ headers = {
 }
 response = requests.request('POST', url, headers = headers, data = payload, allow_redirects=False)
 print(response.text)
-
+print(payload,headers)  
 input()
 
 url = 'http://localhost:8080/amount'
@@ -164,5 +164,5 @@ headers = {
 }
 response = requests.request('POST', url, headers = headers, data = payload, allow_redirects=False)
 print(response.text)
-
+print(payload,headers)  
 

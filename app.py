@@ -1,23 +1,23 @@
 from collections import namedtuple
 from flask import Flask, jsonify, request, render_template, abort
-import json, os
-from flask_sqlalchemy import SQLAlchemy as sql
+import json, os, re
 from sqlalchemy import create_engine
 from config import PGURL
 from DB import db, RequestHandler
 
 DB_URL = PGURL
+SQL_URI = "SQLALCHEMY_DATABASE_URI"
 app = Flask(__name__)
-app.config["SQLALCHEMY_DATABASE_URI"] = DB_URL
+app.config[SQL_URI] = DB_URL
 engine = create_engine(DB_URL, convert_unicode=True, echo=False)
 
 
-@app.route("/balance/<id_>", methods=["GET"])
-def balance(id_):
+@app.route("/balance/<person_id>", methods=["GET"])
+def balance(person_id):
     db_ = db(engine)
-    if db_.person_exists(id_) == False:
+    if db_.person_exists(person_id) == False:
         abort(404)
-    db_.get_balance(id_)
+    db_.get_balance(person_id)
     db_.connection.close()
     return db_.to_json()
 
@@ -26,13 +26,26 @@ def balance(id_):
 def insertion():
     req = RequestHandler(request)
     db_ = db(engine)
-    exists = db_.person_exists(req.payload.account_id)
-    if not exists:
+
+    try:
+        person_exists = db_.person_exists(req.payload.account_id)
+        transaction_exists = db_.transaction_exists(req)
+        if type(req.payload.amount) == type(1) or type(req.payload.amount) == type(1.1):
+            pass
+        else:
+            abort(
+                406,
+                f"'amount' must be either float or interger. type(amount):{type(req.payload.amount)}",
+            )
+            raise ValueError
+    except AttributeError:
+        abort(
+            406,
+            f"""missing information:(account_id|amount|Content-Type|Transaction-Id)""",
+        )
+    if not person_exists:
         abort(404, "User does not exists.")
-    if type(req.payload.amount) == type(1) or type(req.payload.amount) == type(1.1):
-        pass
-    else:
-        raise ValueError
+
     db_.submit_amount(req)
     db_.connection.close()
     return ""

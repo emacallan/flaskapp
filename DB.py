@@ -11,7 +11,10 @@ print(engine)
 
 class AttributeExtender:
     def __init__(self, obj):
-        self.__dict__ = obj
+        try:
+            self.__dict__ = obj
+        except AttributeError:
+            return None
 
 
 class TransactionObj:
@@ -26,24 +29,21 @@ class TransactionObj:
             self.balance = query_result[1]
 
     def __repr__(self):
-
-        return (
+        _repstring = (
             "{"
             + f""" "person_id":"{self.person_id}", "balance": {self.balance} """
             + "}"
         )
+        return _repstring
 
 
 class RequestHandler:
     def __init__(self, request):
-        assert request.json != None
         if request.json == None:
             abort(406, "Content-Type not json")
-        try:
-            self.payload = AttributeExtender(request.json)
-            self.header = request.headers
-        except AttributeError:
-            abort(406)
+
+        self.payload = AttributeExtender(request.json)
+        self.header = request.headers
 
     def __repr__(self):
         return f"""account_id:{self.payload.account_id}\namount:{self.payload.amount}"""
@@ -60,27 +60,29 @@ class db:
     def to_json(self):
         return json.dumps(json.loads(str(self.result)), indent=4)
 
-    def get_balance(self, id_):
-        q = f"""
+    def get_balance(self, person_id_):
+        balance_query = f"""
                 with transactions as (
-                    select id as transaction_id, person_id, amount as amount from Incomes where person_id = '{id_}'
+                    select id as transaction_id, person_id, amount as amount from Incomes where person_id = '{person_id_}'
                     UNION ALL
-                    select id as transaction_id, person_id, -amount as amount from Expenses where person_id = '{id_}'
+                    select id as transaction_id, person_id, -amount as amount from Expenses where person_id = '{person_id_}'
                 )
                 select person_id, sum(amount) as balance from transactions group by person_id;
             """
 
-        self.result = TransactionObj(query_result=self.connection.execute(q).fetchone())
+        self.result = TransactionObj(
+            query_result=self.connection.execute(balance_query).fetchone()
+        )
 
-    def submit_amount(self, req):
-        Table = "Incomes" if req.payload.amount >= 0 else "Expenses"
-        q = f"""
+    def submit_amount(self, request):
+        Table = "Incomes" if request.payload.amount >= 0 else "Expenses"
+        submit_query = f"""
                 insert into {Table} (id, person_id, amount) values(
-                    '{req.header['Transaction-Id']}', '{req.payload.account_id}', '{req.payload.amount}'
+                    '{request.header['Transaction-Id']}', '{request.payload.account_id}', '{request.payload.amount}'
                 ); 
             """
         try:
-            self.connection.execute(q)
+            self.connection.execute(submit_query)
         except Exception as e:
             if "duplicate key" in re.findall("duplicate key", str(e)):
                 abort(
@@ -90,14 +92,22 @@ class db:
             else:
                 abort(404, "Submission could not be performed")
 
-    def person_exists(self, id_):
-        q = f"select id, name from Persons where id='{id_}'"
-        self.result = self.connection.execute(q).fetchone()
+    def person_exists(self, person_id_):
+        query = f"select id, name from Persons where id='{person_id_}'"
+        self.result = self.connection.execute(query).fetchone()
         try:
-            return id_ in self.result[0]
+            return person_id_ in self.result[0]
         except TypeError:
             return False
 
+    def transaction_exists(self, request):
+        Table = 'Incomes' request.payload.amount >=0 else 'Expenses'
+        query = f"select id from {Table} where id='{person_id_}'"
+        self.result = self.connection.execute(query).fetchone()
+        try:
+            return person_id_ in self.result[0]
+        except TypeError:
+            return False
 
 if __name__ == "__main__":
     pass
