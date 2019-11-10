@@ -9,7 +9,7 @@ engine = create_engine(DB_URL, convert_unicode=True, echo=False)
 print(engine)
 
 
-class JsonRequestPackage:
+class AttributeExtender:
     def __init__(self, obj):
         self.__dict__ = obj
 
@@ -40,7 +40,7 @@ class RequestHandler:
         if request.json == None:
             abort(406, "Content-Type not json")
         try:
-            self.payload = JsonRequestPackage(request.json)
+            self.payload = AttributeExtender(request.json)
             self.header = request.headers
         except AttributeError:
             abort(406)
