@@ -30,8 +30,12 @@ class TransactionObj:
 class RequestHandler:
 
     def __init__(self,request):
-        self.payload =  JsonRequestPackage(request.json) 
-        self.header = request.headers
+        assert request.json != None 
+        try:
+            self.payload =  JsonRequestPackage(request.json) 
+            self.header = request.headers
+        except AttributeError: abort(406)
+        
 
 
     def __repr__(self):
@@ -65,10 +69,8 @@ class db:
 
     def submit_amount(self, req): 
         Table = 'Incomes' if req.payload.amount >= 0 else 'Expenses'
-        print(req.payload.account_id)
-        exit()
-        if type(req.payload.account_id) == type('foo'):
-            abort(409)
+        # if type(req.payload.account_id) == type('foo'):
+        #     abort(409)
         
         # if len(req.payload.account_id) > 20: 
         #     abort(409)
