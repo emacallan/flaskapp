@@ -10,7 +10,7 @@ DB_URL = PGURL
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = DB_URL
 engine = create_engine(DB_URL, convert_unicode=True, echo=False)
-# db = sql(app)
+
 
 
 
@@ -33,8 +33,7 @@ def insertion():
     db_ = db(engine)
     exists = db_.person_exists(req.payload.account_id)
     if not exists: 
-        # insert new user? 
-        pass 
+        abort(404, 'User does not exists.') 
     if type(req.payload.amount) == type(1) or type(req.payload.amount) == type(1.1):
         pass
     else:
@@ -43,7 +42,6 @@ def insertion():
         
 
     return ''
-    # except Exception as e: print(e); abort(403)
     
 
 
@@ -51,6 +49,5 @@ def insertion():
 
 if __name__ == "__main__":
 
-    # os.sytem("export FLASK_APP=app.py && export FLASK_RUN_PORT=8080 && python3 -m flask run")
     app.run(debug=True, port = 8080, passthrough_errors=True)
 

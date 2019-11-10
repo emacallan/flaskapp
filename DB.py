@@ -17,9 +17,6 @@ class TransactionObj:
             self.person_id = account_id
             self.balance = amount
         else:
-            print(query_result)
-            # assert len(query_result) == 1 or query_result == None
-            # self.transaction_id = str(query_result[0][0])
             self.person_id = str(query_result[0])
             self.balance = query_result[1]
 
@@ -31,6 +28,8 @@ class RequestHandler:
 
     def __init__(self,request):
         assert request.json != None 
+        if request.json == None:
+            abort(406, 'Content-Type not json')
         try:
             self.payload =  JsonRequestPackage(request.json) 
             self.header = request.headers
@@ -69,13 +68,6 @@ class db:
 
     def submit_amount(self, req): 
         Table = 'Incomes' if req.payload.amount >= 0 else 'Expenses'
-        # if type(req.payload.account_id) == type('foo'):
-        #     abort(409)
-        
-        # if len(req.payload.account_id) > 20: 
-        #     abort(409)
-        # if len(req.header['Transaction-Id']) >20 :
-        #     abort(409)
         q = f"""
                 insert into {Table} (id, person_id, amount) values(
                     '{req.header['Transaction-Id']}', '{req.payload.account_id}', '{req.payload.amount}'
@@ -84,14 +76,13 @@ class db:
         try: self.connection.execute(q)
         except Exception as e: 
             if 'duplicate key' in re.findall('duplicate key', str(e)):
-                abort(409)
-            else: abort(404)
+                abort(409, f'Attempted insertion of duplicate primary key into database.\n{e}')
+            else: abort(404, 'Submission could not be performed')
 
 
     def person_exists(self, id_):
         q = f"select id, name from Persons where id='{id_}'"
         self.result = self.connection.execute(q).fetchone()
-        print(self.result)
         try: return id_ in self.result[0]
         except TypeError: return False
 
