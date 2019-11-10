@@ -4,7 +4,7 @@ import json
 from flask_sqlalchemy  import SQLAlchemy as sql
 from sqlalchemy import create_engine
 from config import PGURL
-from DB import db, Persons, Transaction, RequestHandler
+from DB import db,  RequestHandler
 
 DB_URL = PGURL
 app = Flask(__name__)
@@ -33,7 +33,10 @@ def balance(id_):
 def insertion():
     req = RequestHandler(request)
     db_ = db(engine)
-    db_.person_exists(req.payload.account_id)
+    exists = db_.person_exists(req.payload.account_id)
+    if not exists: 
+        # insert new user? 
+        pass 
     if type(req.payload.amount) == type(1) or type(req.payload.amount) == type(1.1):
         pass
     else:

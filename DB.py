@@ -72,48 +72,13 @@ class db:
     def person_exists(self, id_):
         q = f"select id, name from Persons where id='{id_}'"
         self.result = self.connection.execute(q).fetchone()
-
+        print(self.result)
         return id_ in self.result[0]
 
-
+    # def create_account(self, req):
+    #     q = f"inset into Persons (id, name) values('{req.payload.account_id}', 'foo')" 
+    #     self
     def to_json(self):
 
         return json.dumps(json.loads(str(self.result)), indent= 4)
-
-
-
-
-class PersonsObj: 
-
-    def __init__(self, query_result):
-        self.id = str(query_result[0])
-        self.name = str(query_result[1])
-
-    def __repr__(self):
-
-        return "{"+f""" "name":"{self.name}", "id": "{self.id}" """+"}"
-
-class Persons(db): 
-
-    def __init__(self, engine):
-        super().__init__(engine)
-    
-
-    def exists(self,id_):
-        results = self.connection.execute(f"select id, name from Persons where id='{id_}'").fetchall()
-        self.result = str(PersonsObj(results[0]))
-        
-
-    def to_json(self): return json.dumps(json.loads(str(self.result)), indent= 4)
-
-
-    def __contains__(self,obj):
-
-        return obj in self.result
-
-
-    
-    def __repr__(self):
-
-        return "{"+f""" "person_id":"{self.person_id}", "balance": {self.balance} """+"}"
 
