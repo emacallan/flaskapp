@@ -18,6 +18,7 @@ def balance(id_):
     if db_.person_exists(id_) == False:
         abort(404)
     db_.get_balance(id_)
+    db_.connection.close()
     return db_.to_json()
 
 
@@ -33,7 +34,7 @@ def insertion():
     else:
         raise ValueError
     db_.submit_amount(req)
-
+    db_.connection.close()
     return ""
 
 
