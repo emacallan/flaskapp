@@ -13,7 +13,6 @@ _mailinglist
 .cache/
 .pytest_cache/
 .idea/
-requirements.txt
 server-setup.md
 foo_request.py
 __pycache__

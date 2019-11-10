@@ -1,6 +1,6 @@
 from collections import namedtuple
 from flask import Flask, jsonify, request, render_template, abort 
-import json 
+import json, os 
 from flask_sqlalchemy  import SQLAlchemy as sql
 from sqlalchemy import create_engine
 from config import PGURL
@@ -17,7 +17,6 @@ engine = create_engine(DB_URL, convert_unicode=True, echo=False)
 
 
 
-
     
 @app.route("/balance/<id_>", methods=["GET"])
 def balance(id_):
@@ -25,7 +24,6 @@ def balance(id_):
     if  db_.person_exists(id_) == False:
         abort(404)
     db_.get_balance(id_)
-    
     return db_.to_json()
 
 
@@ -52,5 +50,7 @@ def insertion():
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+
+    # os.sytem("export FLASK_APP=app.py && export FLASK_RUN_PORT=8080 && python3 -m flask run")
+    app.run(debug=True, port = 8080, passthrough_errors=True)
 

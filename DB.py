@@ -1,6 +1,8 @@
 from sqlalchemy import create_engine
 from config import PGURL
 import json 
+import re 
+from flask import abort 
 DB_URL = PGURL
 engine = create_engine(DB_URL, convert_unicode=True, echo=False)
 print(engine)
@@ -45,6 +47,8 @@ class db:
     def __contains__(self, obj):    
         return obj in self.result
 
+    def to_json(self): return json.dumps(json.loads(str(self.result)), indent= 4)
+
     def get_balance(self, id_):
         q = f"""
                 with transactions as (
@@ -54,30 +58,43 @@ class db:
                 )
                 select person_id, sum(amount) as balance from transactions group by person_id;
             """
-        self.result = TransactionObj(self.connection.execute(q).fetchone())
-        print('\t', str(self.result))
+        
+        self.result = TransactionObj(query_result=self.connection.execute(q).fetchone())
+
         
 
     def submit_amount(self, req): 
         Table = 'Incomes' if req.payload.amount >= 0 else 'Expenses'
+        print(req.payload.account_id)
+        exit()
+        if type(req.payload.account_id) == type('foo'):
+            abort(409)
+        
+        # if len(req.payload.account_id) > 20: 
+        #     abort(409)
+        # if len(req.header['Transaction-Id']) >20 :
+        #     abort(409)
         q = f"""
                 insert into {Table} (id, person_id, amount) values(
                     '{req.header['Transaction-Id']}', '{req.payload.account_id}', '{req.payload.amount}'
                 ); 
             """
-        self.connection.execute(q)
+        try: self.connection.execute(q)
+        except Exception as e: 
+            if 'duplicate key' in re.findall('duplicate key', str(e)):
+                abort(409)
+            else: abort(404)
+
 
     def person_exists(self, id_):
         q = f"select id, name from Persons where id='{id_}'"
         self.result = self.connection.execute(q).fetchone()
         print(self.result)
-        return id_ in self.result[0]
+        try: return id_ in self.result[0]
+        except TypeError: return False
 
-    # def create_account(self, req):
-    #     q = f"inset into Persons (id, name) values('{req.payload.account_id}', 'foo')" 
-    #     self
-    def to_json(self):
+    
 
-        return json.dumps(json.loads(str(self.result)), indent= 4)
+
 if __name__ == '__main__':
     pass
