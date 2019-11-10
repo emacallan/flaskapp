@@ -1,10 +1,10 @@
 from sqlalchemy import create_engine
-import json 
 from config import PGURL
+import json 
 DB_URL = PGURL
 engine = create_engine(DB_URL, convert_unicode=True, echo=False)
 print(engine)
-class foo:
+class JsonRequestPackage:
 
     def __init__(self, obj): self.__dict__ = obj
         
@@ -28,12 +28,10 @@ class TransactionObj:
 class RequestHandler:
 
     def __init__(self,request):
-        self.payload = foo(request.json) 
+        self.payload =  JsonRequestPackage(request.json) 
         self.header = request.headers
 
-    # def __repr__(self):
 
-    #     return f"{self.request}"
     def __repr__(self):
         return f"""account_id:{self.payload.account_id}\namount:{self.payload.amount}"""
 
@@ -81,4 +79,5 @@ class db:
     def to_json(self):
 
         return json.dumps(json.loads(str(self.result)), indent= 4)
-
+if __name__ == '__main__':
+    pass
